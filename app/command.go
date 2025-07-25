@@ -14,24 +14,19 @@ type Command struct {
 // This will hold all the Commands the CLI can handle.
 type Commands struct {
 	// Map of command names to their handler functions.
-	CommandToHandlerMap map[string]func(*State, Command) error
+	RegisteredCommands map[string]func(*State, Command) error
 }
 
 // Runs a given Command with the provided state if it exists.
 func (c *Commands) Run(s *State, cmd Command) error {
-	fn, exists := c.CommandToHandlerMap[cmd.Name]
+	fn, exists := c.RegisteredCommands[cmd.Name]
 	if !exists {
 		return errors.New("command does not exist")
 	}
-
-	err := fn(s, cmd)
-	if err != nil {
-		return err
-	}
-	return nil
+	return fn(s, cmd)
 }
 
 // Registers a new handler function for a command name.
 func (c *Commands) Register(name string, f func(*State, Command) error) {
-	c.CommandToHandlerMap[name] = f
+	c.RegisteredCommands[name] = f
 }

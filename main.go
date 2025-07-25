@@ -1,7 +1,6 @@
 package main
 
 import (
-	"fmt"
 	"log"
 	"os"
 
@@ -15,14 +14,13 @@ func main() {
 	if err != nil {
 		log.Fatalf("error reading config: %v", err)
 	}
-	fmt.Printf("Read config: %+v\n", *c)
 
 	// Store config in a new instance of the State struct.
 	state := &app.State{Cfg: c}
 
 	// Create a new instance of the commands struct with an initialized map of handler functions.
 	commands := &app.Commands{
-		CommandToHandlerMap: make(map[string]func(*app.State, app.Command) error),
+		RegisteredCommands: make(map[string]func(*app.State, app.Command) error),
 	}
 
 	// Register a handler function for the login command.
@@ -30,7 +28,7 @@ func main() {
 
 	// Use os.Args to get the command-line arguments passed in by the user.
 	if len(os.Args) < 2 {
-		log.Fatalf("no command provided, command is mandatory")
+		log.Fatal("Usage: cli <command> [args...]")
 	}
 
 	userCommand := app.Command{
