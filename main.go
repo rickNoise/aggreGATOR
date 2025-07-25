@@ -3,7 +3,9 @@ package main
 import (
 	"fmt"
 	"log"
+	"os"
 
+	"github.com/rickNoise/aggreGATOR/app"
 	"github.com/rickNoise/aggreGATOR/internal/config"
 )
 
@@ -15,16 +17,29 @@ func main() {
 	}
 	fmt.Printf("Read config: %+v\n", *c)
 
-	// Set the current user to "lane" (actually, you should use your name instead) and update the config file on disk.
-	err = c.SetUser("nick")
-	if err != nil {
-		log.Fatalf("could not set current user: %v", err)
+	// Store config in a new instance of the State struct.
+	state := &app.State{Cfg: c}
+
+	// Create a new instance of the commands struct with an initialized map of handler functions.
+	commands := &app.Commands{
+		CommandToHandlerMap: make(map[string]func(*app.State, app.Command) error),
 	}
 
-	// Read the config file again and print the contents of the config struct to the terminal.
-	c, err = config.Read()
-	if err != nil {
-		log.Fatalf("error reading config: %v", err)
+	// Register a handler function for the login command.
+	commands.Register("login", app.HandlerLogin)
+
+	// Use os.Args to get the command-line arguments passed in by the user.
+	if len(os.Args) < 2 {
+		log.Fatalf("no command provided, command is mandatory")
 	}
-	fmt.Println(*c)
+
+	userCommand := app.Command{
+		Name:      os.Args[1],
+		Arguments: os.Args[2:],
+	}
+
+	err = commands.Run(state, userCommand)
+	if err != nil {
+		log.Fatalf("could not run command: %v", err)
+	}
 }
