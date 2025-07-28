@@ -1,6 +1,7 @@
 package main
 
 import (
+	"fmt"
 	"log"
 	"os"
 
@@ -14,6 +15,7 @@ func main() {
 	if err != nil {
 		log.Fatalf("error reading config: %v", err)
 	}
+	fmt.Println(*c)
 
 	// Store config in a new instance of the State struct.
 	state := &app.State{Cfg: c}
