@@ -39,18 +39,11 @@ func main() {
 		RegisteredCommands: make(map[string]func(*app.State, app.Command) error),
 	}
 
-	// Register a handler function for the login command.
+	// Register handles for cli commands
 	commands.Register("login", app.HandlerLogin)
-
-	// Register a handler function for the register command.
 	commands.Register("register", app.HandlerRegister)
-
-	// Register a handler function for the reset command.
 	commands.Register("reset", app.HandlerReset)
-
-	// Register a handled function for the users command.
 	commands.Register("users", app.HandlerUsers)
-
 	commands.Register("agg", app.HandlerAgg)
 
 	// Use os.Args to get the command-line arguments passed in by the user.
