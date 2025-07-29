@@ -51,6 +51,8 @@ func main() {
 	// Register a handled function for the users command.
 	commands.Register("users", app.HandlerUsers)
 
+	commands.Register("agg", app.HandlerAgg)
+
 	// Use os.Args to get the command-line arguments passed in by the user.
 	if len(os.Args) < 2 {
 		log.Fatal("Usage: cli <command> [args...]")

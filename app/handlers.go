@@ -9,6 +9,7 @@ import (
 
 	"github.com/google/uuid"
 	"github.com/rickNoise/aggreGATOR/internal/database"
+	"github.com/rickNoise/aggreGATOR/rss"
 )
 
 func HandlerLogin(s *State, cmd Command) error {
@@ -95,5 +96,18 @@ func HandlerUsers(s *State, cmd Command) error {
 			fmt.Printf("* %s\n", user.Name)
 		}
 	}
+	return nil
+}
+
+func HandlerAgg(s *State, cmd Command) error {
+	// hardcoded single URL for now
+	const URL = "https://www.wagslane.dev/index.xml"
+
+	feed, err := rss.FetchFeed(context.Background(), URL)
+	if err != nil {
+		return err
+	}
+
+	fmt.Printf("successfully fetched feed from %s: %+v\n", URL, *feed)
 	return nil
 }
