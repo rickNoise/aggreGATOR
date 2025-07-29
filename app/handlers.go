@@ -111,3 +111,34 @@ func HandlerAgg(s *State, cmd Command) error {
 	fmt.Printf("successfully fetched feed from %s: %+v\n", URL, *feed)
 	return nil
 }
+
+func HandlerAddFeed(s *State, cmd Command) error {
+	if len(cmd.Arguments) < 2 {
+		return errors.New("error: addfeed command must pass two arguments (name) and (url)")
+	}
+	feedName := cmd.Arguments[0]
+	feedUrl := cmd.Arguments[1]
+
+	user, err := s.Db.GetUser(context.Background(), s.Cfg.CurrentUserName)
+	if err != nil {
+		return fmt.Errorf("could not get current user: %w", err)
+	}
+
+	feed, err := s.Db.CreateFeed(
+		context.Background(),
+		database.CreateFeedParams{
+			ID:        uuid.New(),
+			CreatedAt: time.Now(),
+			UpdatedAt: time.Now(),
+			Name:      feedName,
+			Url:       feedUrl,
+			UserID:    user.ID,
+		},
+	)
+	if err != nil {
+		return fmt.Errorf("could not create feed in the database: %w", err)
+	}
+
+	fmt.Printf("successfully added feed %s to user %s: %+v", feed.Name, user.Name, feed)
+	return nil
+}
