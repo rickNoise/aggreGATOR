@@ -59,14 +59,41 @@ func HandlerRegister(s *State, cmd Command) error {
 	return nil
 }
 
-// Helper function that updates the username in the config file.
-func setUserNameInConfig(s *State, username string) error {
-	if username == "" {
-		return errors.New("cannot set a blank username")
+// HandlerReset deletes all data in the users DB table.
+func HandlerReset(s *State, cmd Command) error {
+	if len(cmd.Arguments) != 0 {
+		return errors.New("reset failed: reset cannot pass any arguments")
 	}
-	err := s.Cfg.SetUser(username)
+
+	err := s.Db.DeleteAllUsers(context.Background())
 	if err != nil {
-		return fmt.Errorf("could not set user name: %w", err)
+		return err
+	}
+	fmt.Println("Successfully reset database; all users data deleted")
+	return nil
+}
+
+func HandlerUsers(s *State, cmd Command) error {
+	if len(cmd.Arguments) != 0 {
+		return errors.New("users command cannot take arguments")
+	}
+
+	users, err := s.Db.GetUsers(context.Background())
+	if err != nil {
+		return fmt.Errorf("failed to get users: %w", err)
+	}
+
+	if len(users) == 0 {
+		fmt.Println("no users registered")
+		return nil
+	}
+
+	for _, user := range users {
+		if user.Name == s.Cfg.CurrentUserName {
+			fmt.Printf("* %s (current)\n", user.Name)
+		} else {
+			fmt.Printf("* %s\n", user.Name)
+		}
 	}
 	return nil
 }

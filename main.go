@@ -45,6 +45,12 @@ func main() {
 	// Register a handler function for the register command.
 	commands.Register("register", app.HandlerRegister)
 
+	// Register a handler function for the reset command.
+	commands.Register("reset", app.HandlerReset)
+
+	// Register a handled function for the users command.
+	commands.Register("users", app.HandlerUsers)
+
 	// Use os.Args to get the command-line arguments passed in by the user.
 	if len(os.Args) < 2 {
 		log.Fatal("Usage: cli <command> [args...]")

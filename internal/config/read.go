@@ -18,7 +18,7 @@ func Read() (*Config, error) {
 	}
 
 	// Read the JSON file into a byte slice directly
-	fmt.Printf("Reading config from %s...\n", jsonFilePath)
+	// fmt.Printf("Reading config from %s...\n", jsonFilePath)
 	fileData, err := os.ReadFile(jsonFilePath)
 	if err != nil {
 		return nil, fmt.Errorf("failed to read file %s: %w", jsonFilePath, err)
