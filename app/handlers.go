@@ -142,3 +142,34 @@ func HandlerAddFeed(s *State, cmd Command) error {
 	fmt.Printf("successfully added feed %s to user %s: %+v", feed.Name, user.Name, feed)
 	return nil
 }
+
+func HandlerFeeds(s *State, cmd Command) error {
+	if len(cmd.Arguments) != 0 {
+		return errors.New("feeds command cannot take arguments")
+	}
+
+	feeds, err := s.Db.GetFeeds(context.Background())
+	if err != nil {
+		return fmt.Errorf("error getting feeds data from db: %w", err)
+	}
+	if len(feeds) == 0 {
+		fmt.Println("No feeds in database.")
+	}
+
+	/*
+		The name of the feed
+		The URL of the feed
+		The name of the user that created the feed (you might need a new SQL query)
+	*/
+	for _, feed := range feeds {
+		feedAdder, err := s.Db.GetUserById(context.Background(), feed.UserID)
+		if err != nil {
+			return fmt.Errorf("could not get creating user for feed %v, may be problem with feed data or GetUserById method: %w", feed, err)
+		}
+
+		fmt.Println("name:", feed.Name)
+		fmt.Printf("├── url:      %s\n", feed.Url)
+		fmt.Printf("└── added by: %s\n", feedAdder.Name)
+	}
+	return nil
+}

@@ -46,6 +46,7 @@ func main() {
 	commands.Register("users", app.HandlerUsers)
 	commands.Register("agg", app.HandlerAgg)
 	commands.Register("addfeed", app.HandlerAddFeed)
+	commands.Register("feeds", app.HandlerFeeds)
 
 	// Use os.Args to get the command-line arguments passed in by the user.
 	if len(os.Args) < 2 {
