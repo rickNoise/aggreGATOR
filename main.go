@@ -1,5 +1,7 @@
 package main
 
+// test add, can be removed
+
 import (
 	"database/sql"
 	"log"
