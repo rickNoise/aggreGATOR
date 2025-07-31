@@ -112,6 +112,7 @@ func HandlerAgg(s *State, cmd Command) error {
 	return nil
 }
 
+// Creates a new feed (name) at source (url) and sets the current user to follow it.
 func HandlerAddFeed(s *State, cmd Command) error {
 	if len(cmd.Arguments) < 2 {
 		return errors.New("error: addfeed command must pass two arguments (name) and (url)")
@@ -124,6 +125,7 @@ func HandlerAddFeed(s *State, cmd Command) error {
 		return fmt.Errorf("could not get current user: %w", err)
 	}
 
+	// Create the new feed.
 	feed, err := s.Db.CreateFeed(
 		context.Background(),
 		database.CreateFeedParams{
@@ -139,7 +141,22 @@ func HandlerAddFeed(s *State, cmd Command) error {
 		return fmt.Errorf("could not create feed in the database: %w", err)
 	}
 
-	fmt.Printf("successfully added feed %s to user %s: %+v", feed.Name, user.Name, feed)
+	// Set the user to follow the new feed.
+	feedFollow, err := s.Db.CreateFeedFollow(
+		context.Background(),
+		database.CreateFeedFollowParams{
+			ID:        uuid.New(),
+			CreatedAt: time.Now(),
+			UpdatedAt: time.Now(),
+			UserID:    user.ID,
+			FeedID:    feed.ID,
+		},
+	)
+	if err != nil {
+		return fmt.Errorf("feed created, but failed setting current user to follow it: %w", err)
+	}
+
+	fmt.Printf("successfully added feed %s from source %s; current user %s is now following this feed\n", feedFollow.FeedName, feed.Url, feedFollow.UserName)
 	return nil
 }
 
