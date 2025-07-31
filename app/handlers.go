@@ -113,17 +113,12 @@ func HandlerAgg(s *State, cmd Command) error {
 }
 
 // Creates a new feed (name) at source (url) and sets the current user to follow it.
-func HandlerAddFeed(s *State, cmd Command) error {
+func HandlerAddFeed(s *State, cmd Command, user database.User) error {
 	if len(cmd.Arguments) < 2 {
 		return errors.New("error: addfeed command must pass two arguments (name) and (url)")
 	}
 	feedName := cmd.Arguments[0]
 	feedUrl := cmd.Arguments[1]
-
-	user, err := s.Db.GetUser(context.Background(), s.Cfg.CurrentUserName)
-	if err != nil {
-		return fmt.Errorf("could not get current user: %w", err)
-	}
 
 	// Create the new feed.
 	feed, err := s.Db.CreateFeed(
@@ -192,16 +187,12 @@ func HandlerFeeds(s *State, cmd Command) error {
 }
 
 // Takes a single url argument and creates a new feed follow record for the current user. It should print the name of the feed and the current user once the record is created (which the query we just made should support). You'll need a query to look up feeds by URL.
-func HandlerFollow(s *State, cmd Command) error {
+func HandlerFollow(s *State, cmd Command, user database.User) error {
 	if len(cmd.Arguments) != 1 {
 		return errors.New("follow command takes a single url argument")
 	}
 	url := cmd.Arguments[0]
 
-	user, err := s.Db.GetUser(context.Background(), s.Cfg.CurrentUserName)
-	if err != nil {
-		return fmt.Errorf("could not get current user: %w", err)
-	}
 	feed, err := s.Db.GetFeedByUrl(context.Background(), url)
 	if err != nil {
 		return fmt.Errorf("could not GetFeedByUrl, feed may not exist yet, try to add the feed first: %w", err)
@@ -226,11 +217,11 @@ func HandlerFollow(s *State, cmd Command) error {
 }
 
 // Print all the names of the feeds the current user is following.
-func HandlerFollowing(s *State, cmd Command) error {
+func HandlerFollowing(s *State, cmd Command, user database.User) error {
 	if len(cmd.Arguments) != 0 {
 		return errors.New("following command cannot take any arguments")
 	}
-	feedsFollowed, err := s.Db.GetFeedFollowsForUser(context.Background(), s.Cfg.CurrentUserName)
+	feedsFollowed, err := s.Db.GetFeedFollowsForUser(context.Background(), user.Name)
 	if err != nil {
 		return fmt.Errorf("could not get GetFeedFollowsForUser: %w", err)
 	}
