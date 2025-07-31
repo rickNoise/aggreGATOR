@@ -13,7 +13,6 @@ import (
 // cmds.register("addfeed", middlewareLoggedIn(handlerAddFeed))
 func MiddlewareLoggedIn(handler func(s *State, cmd Command, user database.User) error) func(*State, Command) error {
 	return func(s *State, cmd Command) error {
-		fmt.Println("entered the wrapped middleware fn...")
 		user, err := s.Db.GetUser(context.Background(), s.Cfg.CurrentUserName)
 		if err != nil {
 			return fmt.Errorf("could not get current user, maybe no user is logged in?: %w", err)
