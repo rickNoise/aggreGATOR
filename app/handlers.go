@@ -207,3 +207,26 @@ func HandlerFollow(s *State, cmd Command) error {
 	fmt.Printf("Current user %s now following %s\n", feed_follow.UserName, feed_follow.FeedName)
 	return nil
 }
+
+// Print all the names of the feeds the current user is following.
+func HandlerFollowing(s *State, cmd Command) error {
+	if len(cmd.Arguments) != 0 {
+		return errors.New("following command cannot take any arguments")
+	}
+	feedsFollowed, err := s.Db.GetFeedFollowsForUser(context.Background(), s.Cfg.CurrentUserName)
+	if err != nil {
+		return fmt.Errorf("could not get GetFeedFollowsForUser: %w", err)
+	}
+
+	fmt.Printf("Feeds followed by current user %s:\n", s.Cfg.CurrentUserName)
+	prefix := "├──"
+	for i, feed := range feedsFollowed {
+		if i == len(feedsFollowed)-1 {
+			lastItemPrefix := "└──"
+			fmt.Printf("%s %s\n", lastItemPrefix, feed.FeedName)
+			continue
+		}
+		fmt.Printf("%s %s\n", prefix, feed.FeedName)
+	}
+	return nil
+}
