@@ -173,3 +173,37 @@ func HandlerFeeds(s *State, cmd Command) error {
 	}
 	return nil
 }
+
+// Takes a single url argument and creates a new feed follow record for the current user. It should print the name of the feed and the current user once the record is created (which the query we just made should support). You'll need a query to look up feeds by URL.
+func HandlerFollow(s *State, cmd Command) error {
+	if len(cmd.Arguments) != 1 {
+		return errors.New("follow command takes a single url argument")
+	}
+	url := cmd.Arguments[0]
+
+	user, err := s.Db.GetUser(context.Background(), s.Cfg.CurrentUserName)
+	if err != nil {
+		return fmt.Errorf("could not get current user: %w", err)
+	}
+	feed, err := s.Db.GetFeedByUrl(context.Background(), url)
+	if err != nil {
+		return fmt.Errorf("could not GetFeedByUrl, feed may not exist yet, try to add the feed first: %w", err)
+	}
+
+	feed_follow, err := s.Db.CreateFeedFollow(
+		context.Background(),
+		database.CreateFeedFollowParams{
+			ID:        uuid.New(),
+			CreatedAt: time.Now(),
+			UpdatedAt: time.Now(),
+			UserID:    user.ID,
+			FeedID:    feed.ID,
+		},
+	)
+	if err != nil {
+		return fmt.Errorf("error with CreateFeedFollow: %w", err)
+	}
+
+	fmt.Printf("Current user %s now following %s\n", feed_follow.UserName, feed_follow.FeedName)
+	return nil
+}
