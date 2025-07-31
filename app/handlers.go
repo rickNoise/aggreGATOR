@@ -112,6 +112,7 @@ func HandlerAgg(s *State, cmd Command) error {
 	return nil
 }
 
+// Creates a new feed (name) at source (url) and sets the current user to follow it.
 func HandlerAddFeed(s *State, cmd Command) error {
 	if len(cmd.Arguments) < 2 {
 		return errors.New("error: addfeed command must pass two arguments (name) and (url)")
@@ -124,6 +125,7 @@ func HandlerAddFeed(s *State, cmd Command) error {
 		return fmt.Errorf("could not get current user: %w", err)
 	}
 
+	// Create the new feed.
 	feed, err := s.Db.CreateFeed(
 		context.Background(),
 		database.CreateFeedParams{
@@ -139,7 +141,22 @@ func HandlerAddFeed(s *State, cmd Command) error {
 		return fmt.Errorf("could not create feed in the database: %w", err)
 	}
 
-	fmt.Printf("successfully added feed %s to user %s: %+v", feed.Name, user.Name, feed)
+	// Set the user to follow the new feed.
+	feedFollow, err := s.Db.CreateFeedFollow(
+		context.Background(),
+		database.CreateFeedFollowParams{
+			ID:        uuid.New(),
+			CreatedAt: time.Now(),
+			UpdatedAt: time.Now(),
+			UserID:    user.ID,
+			FeedID:    feed.ID,
+		},
+	)
+	if err != nil {
+		return fmt.Errorf("feed created, but failed setting current user to follow it: %w", err)
+	}
+
+	fmt.Printf("successfully added feed %s from source %s; current user %s is now following this feed\n", feedFollow.FeedName, feed.Url, feedFollow.UserName)
 	return nil
 }
 
@@ -170,6 +187,63 @@ func HandlerFeeds(s *State, cmd Command) error {
 		fmt.Println("name:", feed.Name)
 		fmt.Printf("├── url:      %s\n", feed.Url)
 		fmt.Printf("└── added by: %s\n", feedAdder.Name)
+	}
+	return nil
+}
+
+// Takes a single url argument and creates a new feed follow record for the current user. It should print the name of the feed and the current user once the record is created (which the query we just made should support). You'll need a query to look up feeds by URL.
+func HandlerFollow(s *State, cmd Command) error {
+	if len(cmd.Arguments) != 1 {
+		return errors.New("follow command takes a single url argument")
+	}
+	url := cmd.Arguments[0]
+
+	user, err := s.Db.GetUser(context.Background(), s.Cfg.CurrentUserName)
+	if err != nil {
+		return fmt.Errorf("could not get current user: %w", err)
+	}
+	feed, err := s.Db.GetFeedByUrl(context.Background(), url)
+	if err != nil {
+		return fmt.Errorf("could not GetFeedByUrl, feed may not exist yet, try to add the feed first: %w", err)
+	}
+
+	feed_follow, err := s.Db.CreateFeedFollow(
+		context.Background(),
+		database.CreateFeedFollowParams{
+			ID:        uuid.New(),
+			CreatedAt: time.Now(),
+			UpdatedAt: time.Now(),
+			UserID:    user.ID,
+			FeedID:    feed.ID,
+		},
+	)
+	if err != nil {
+		return fmt.Errorf("error with CreateFeedFollow: %w", err)
+	}
+
+	fmt.Printf("Current user %s now following %s\n", feed_follow.UserName, feed_follow.FeedName)
+	return nil
+}
+
+// Print all the names of the feeds the current user is following.
+func HandlerFollowing(s *State, cmd Command) error {
+	if len(cmd.Arguments) != 0 {
+		return errors.New("following command cannot take any arguments")
+	}
+	feedsFollowed, err := s.Db.GetFeedFollowsForUser(context.Background(), s.Cfg.CurrentUserName)
+	if err != nil {
+		return fmt.Errorf("could not get GetFeedFollowsForUser: %w", err)
+	}
+
+	fmt.Printf("Feeds followed by current user %s:\n", s.Cfg.CurrentUserName)
+	prefix := "├──"
+	for i, feed := range feedsFollowed {
+		if i == len(feedsFollowed)-1 {
+			lastItemPrefix := "└──"
+			fmt.Printf("%s %s\n", lastItemPrefix, feed.FeedName)
+			continue
+		}
+		fmt.Printf("%s %s\n", prefix, feed.FeedName)
 	}
 	return nil
 }

@@ -1,5 +1,7 @@
 package main
 
+// test add, can be removed
+
 import (
 	"database/sql"
 	"log"
@@ -47,6 +49,8 @@ func main() {
 	commands.Register("agg", app.HandlerAgg)
 	commands.Register("addfeed", app.HandlerAddFeed)
 	commands.Register("feeds", app.HandlerFeeds)
+	commands.Register("follow", app.HandlerFollow)
+	commands.Register("following", app.HandlerFollowing)
 
 	// Use os.Args to get the command-line arguments passed in by the user.
 	if len(os.Args) < 2 {
