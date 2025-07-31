@@ -4,6 +4,7 @@ package main
 
 import (
 	"database/sql"
+	"fmt"
 	"log"
 	"os"
 
@@ -47,10 +48,18 @@ func main() {
 	commands.Register("reset", app.HandlerReset)
 	commands.Register("users", app.HandlerUsers)
 	commands.Register("agg", app.HandlerAgg)
-	commands.Register("addfeed", app.HandlerAddFeed)
+	commands.Register("addfeed", app.MiddlewareLoggedIn(app.HandlerAddFeed))
 	commands.Register("feeds", app.HandlerFeeds)
-	commands.Register("follow", app.HandlerFollow)
-	commands.Register("following", app.HandlerFollowing)
+	commands.Register("follow", app.MiddlewareLoggedIn(app.HandlerFollow))
+	commands.Register("following", app.MiddlewareLoggedIn(app.HandlerFollowing))
+
+	// Register handle for help command
+	commands.Register("help", func(s *app.State, cmd app.Command) error {
+		for name := range commands.RegisteredCommands {
+			fmt.Println(name)
+		}
+		return nil
+	})
 
 	// Use os.Args to get the command-line arguments passed in by the user.
 	if len(os.Args) < 2 {
