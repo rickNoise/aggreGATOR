@@ -31,3 +31,12 @@ SELECT
 FROM feeds
 WHERE
     feeds.url = $1;
+
+-- name: MarkFeedFetched :exec
+-- Sets the last_fetched_at and updated_at columns to the current time for a given feed by feed id.
+UPDATE feeds
+SET
+    updated_at = NOW(),
+    last_fetched_at = NOW()
+WHERE
+    feeds.id = sqlc.arg (feed_id);
