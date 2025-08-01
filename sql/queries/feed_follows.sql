@@ -46,11 +46,11 @@ WHERE
         SELECT user_id
         FROM users
         WHERE
-            users.name = $1
+            users.name = sqlc.arg (user_name)
     )
     AND feed_id = (
         SELECT feed_id
         FROM feeds
         WHERE
-            feeds.url = $2
+            feeds.url = sqlc.arg (feed_url)
     ) RETURNING *;

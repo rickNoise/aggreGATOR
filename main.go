@@ -52,6 +52,7 @@ func main() {
 	commands.Register("feeds", app.HandlerFeeds)
 	commands.Register("follow", app.MiddlewareLoggedIn(app.HandlerFollow))
 	commands.Register("following", app.MiddlewareLoggedIn(app.HandlerFollowing))
+	commands.Register("unfollow", app.MiddlewareLoggedIn(app.HandlerUnfollow))
 
 	// Register handle for help command
 	commands.Register("help", func(s *app.State, cmd app.Command) error {

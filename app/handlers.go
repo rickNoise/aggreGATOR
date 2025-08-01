@@ -238,3 +238,25 @@ func HandlerFollowing(s *State, cmd Command, user database.User) error {
 	}
 	return nil
 }
+
+// Unfollow command that accepts a feed's URL as an argument and unfollows it for the current user.
+func HandlerUnfollow(s *State, cmd Command, user database.User) error {
+	if len(cmd.Arguments) != 1 {
+		return errors.New("unfollow command takes only a single argument, the url of the feed to unfollow (for the current user)")
+	}
+
+	feedUrl := cmd.Arguments[0]
+	_, err := s.Db.DeleteFeedFollowByUserAndFeedUrl(
+		context.Background(),
+		database.DeleteFeedFollowByUserAndFeedUrlParams{
+			UserName: user.Name,
+			FeedUrl:  feedUrl,
+		},
+	)
+	if err != nil {
+		return fmt.Errorf("could not unfollow feeds; user %s is likely not currently following the feed with url %s", user.Name, feedUrl)
+	}
+
+	fmt.Printf("successfully unfollowed feed with url %s for current user %s", feedUrl, user.Name)
+	return nil
+}

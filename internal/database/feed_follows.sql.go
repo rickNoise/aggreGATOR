@@ -93,13 +93,13 @@ WHERE
 `
 
 type DeleteFeedFollowByUserAndFeedUrlParams struct {
-	Name string
-	Url  string
+	UserName string
+	FeedUrl  string
 }
 
 // Delete a feed follow record by user and feed url combination.
 func (q *Queries) DeleteFeedFollowByUserAndFeedUrl(ctx context.Context, arg DeleteFeedFollowByUserAndFeedUrlParams) (FeedFollow, error) {
-	row := q.db.QueryRowContext(ctx, deleteFeedFollowByUserAndFeedUrl, arg.Name, arg.Url)
+	row := q.db.QueryRowContext(ctx, deleteFeedFollowByUserAndFeedUrl, arg.UserName, arg.FeedUrl)
 	var i FeedFollow
 	err := row.Scan(
 		&i.ID,
