@@ -9,7 +9,6 @@ import (
 
 	"github.com/google/uuid"
 	"github.com/rickNoise/aggreGATOR/internal/database"
-	"github.com/rickNoise/aggreGATOR/rss"
 )
 
 func HandlerLogin(s *State, cmd Command) error {
@@ -100,16 +99,26 @@ func HandlerUsers(s *State, cmd Command) error {
 }
 
 func HandlerAgg(s *State, cmd Command) error {
-	// hardcoded single URL for now
-	const URL = "https://www.wagslane.dev/index.xml"
+	minDurationBetweenRequests := time.Second * 5
 
-	feed, err := rss.FetchFeed(context.Background(), URL)
+	if len(cmd.Arguments) != 1 {
+		return errors.New("agg command takes a single argument (time_between_reqs)")
+	}
+	timeBetweenRequests, err := time.ParseDuration(cmd.Arguments[0])
 	if err != nil {
-		return err
+		return fmt.Errorf("could not parse agg argument as a time duration, use a value like \"60s\"")
+	}
+	if timeBetweenRequests < minDurationBetweenRequests {
+		return errors.New("time_between_reqs argument must at least 5s")
 	}
 
-	fmt.Printf("successfully fetched feed from %s: %+v\n", URL, *feed)
-	return nil
+	fmt.Printf("Collecting feeds every %+v...\n", timeBetweenRequests)
+
+	ticker := time.NewTicker(timeBetweenRequests)
+	for ; ; <-ticker.C {
+		fmt.Printf("Scraping feed...\n")
+		scrapeFeeds(s)
+	}
 }
 
 // Creates a new feed (name) at source (url) and sets the current user to follow it.
