@@ -33,11 +33,11 @@ func scrapeFeeds(s *State) error {
 		return fmt.Errorf("problem fetching RSS feed: %w", err)
 	}
 
+	numItemsToProcess := len(feedRSSData.Channel.Item)
+	var numNewPostsCreated, numDuplicatePostsSkipped int
+
 	fmt.Printf("Iterating over items for feed %s...\n", feedToFetch.Name)
 	for _, RSSItem := range feedRSSData.Channel.Item {
-		fmt.Printf("-> Title: %s...\n", RSSItem.Title[:min(len(RSSItem.Title), 10)])
-		fmt.Printf("--> Saving post to db...\n")
-
 		// Build database item params
 		dbItem := database.CreatePostParams{
 			ID:          uuid.New(),
@@ -53,7 +53,7 @@ func scrapeFeeds(s *State) error {
 		_, err := s.Db.CreatePost(context.Background(), dbItem)
 		if err != nil {
 			if checkForUniqueConstraintViolation(err) {
-				fmt.Printf("post already exists in db, skipping...\n")
+				numDuplicatePostsSkipped++
 				continue
 			} else {
 				// If it's any other error, log it and stop the entire scrape.
@@ -61,9 +61,11 @@ func scrapeFeeds(s *State) error {
 				return fmt.Errorf("could not create post for title %s: %w", RSSItem.Title, err)
 			}
 		} else {
-			fmt.Println("successfully created new post!")
+			fmt.Printf(">> new post created: - %s\n", dbItem.Title.String)
+			numNewPostsCreated++
 		}
 	}
+	fmt.Printf("### from total %d feed items, created %d new posts and skipped %d already saved posts\n", numItemsToProcess, numNewPostsCreated, numDuplicatePostsSkipped)
 	return nil
 }
 
