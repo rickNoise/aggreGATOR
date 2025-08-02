@@ -2,8 +2,14 @@ package app
 
 import (
 	"context"
+	"database/sql"
+	"errors"
 	"fmt"
+	"time"
 
+	"github.com/google/uuid"
+	"github.com/lib/pq"
+	"github.com/rickNoise/aggreGATOR/internal/database"
 	"github.com/rickNoise/aggreGATOR/rss"
 )
 
@@ -27,8 +33,77 @@ func scrapeFeeds(s *State) error {
 		return fmt.Errorf("problem fetching RSS feed: %w", err)
 	}
 
+	fmt.Printf("Iterating over items for feed %s...\n", feedToFetch.Name)
 	for _, RSSItem := range feedRSSData.Channel.Item {
-		fmt.Println("-", RSSItem.Title)
+		fmt.Printf("-> Title: %s...\n", RSSItem.Title[:min(len(RSSItem.Title), 10)])
+		fmt.Printf("--> Saving post to db...\n")
+
+		// Build database item params
+		dbItem := database.CreatePostParams{
+			ID:          uuid.New(),
+			CreatedAt:   time.Now(),
+			UpdatedAt:   time.Now(),
+			Title:       parseStringForNullString(RSSItem.Title),
+			Url:         RSSItem.Link,
+			Description: parseStringForNullString(RSSItem.Description),
+			PublishedAt: parseStringForNullTime(RSSItem.PubDate),
+			FeedID:      feedToFetch.ID,
+		}
+
+		_, err := s.Db.CreatePost(context.Background(), dbItem)
+		if err != nil {
+			if checkForUniqueConstraintViolation(err) {
+				fmt.Printf("post already exists in db, skipping...\n")
+				continue
+			} else {
+				// If it's any other error, log it and stop the entire scrape.
+				// This is important for critical errors like a bad connection or syntax error.
+				return fmt.Errorf("could not create post for title %s: %w", RSSItem.Title, err)
+			}
+		} else {
+			fmt.Println("successfully created new post!")
+		}
 	}
 	return nil
+}
+
+func checkForUniqueConstraintViolation(err error) bool {
+	var pqErr *pq.Error
+	return errors.As(err, &pqErr) && pqErr.Code == "23505"
+}
+
+func parseStringForNullString(str string) sql.NullString {
+	if str != "" {
+		return sql.NullString{String: str, Valid: true}
+	} else {
+		return sql.NullString{Valid: false}
+	}
+}
+
+func parseStringForNullTime(dateStr string) sql.NullTime {
+	// The layouts to try in order. We'll start with the most common.
+	dateLayouts := []string{
+		time.RFC1123,
+		time.RFC1123Z,
+		time.RFC822,
+		time.RFC822Z,
+		time.RFC3339,
+	}
+
+	// First, handle the case where the string is empty.
+	if dateStr == "" {
+		return sql.NullTime{Valid: false}
+	}
+
+	// Iterate through our list of known formats and try to parse the string.
+	for _, layout := range dateLayouts {
+		parsedTime, err := time.Parse(layout, dateStr)
+		if err == nil {
+			// Success! Return a valid sql.NullTime.
+			return sql.NullTime{Time: parsedTime, Valid: true}
+		}
+	}
+
+	// Parsing unsuccessful with all our predefined layouts, return NULL database value.
+	return sql.NullTime{Valid: false}
 }
