@@ -107,5 +107,7 @@ func parseStringForNullTime(dateStr string) sql.NullTime {
 	}
 
 	// Parsing unsuccessful with all our predefined layouts, return NULL database value.
+	// After the parsing loop fails
+	fmt.Printf("Warning: Could not parse date '%s' for post, saving as NULL\n", dateStr)
 	return sql.NullTime{Valid: false}
 }
