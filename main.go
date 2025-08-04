@@ -63,14 +63,6 @@ func main() {
 		return nil
 	})
 
-	// Register handle for help command
-	commands.Register("help", func(s *app.State, cmd app.Command) error {
-		for name := range commands.RegisteredCommands {
-			fmt.Println(name)
-		}
-		return nil
-	})
-
 	// Use os.Args to get the command-line arguments passed in by the user.
 	if len(os.Args) < 2 {
 		log.Fatal("Usage: cli <command> [args...]")
