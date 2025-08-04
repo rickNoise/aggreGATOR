@@ -12,7 +12,7 @@ You'll need to install:
 
 ## Installation & Configuration
 
-- Run "go install" to install the gator CLI tool.
+- Run "go install ." to install the gator CLI tool.
 - Create a ".gatorconfig.json" file in your home directory (e.g. "~/.gatorconfig.json") and populate with the following content. You'll need to use a valid connection string for your environment.
 
 ```
