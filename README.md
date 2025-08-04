@@ -13,7 +13,7 @@ You'll need to install:
 ## Installation & Configuration
 
 - Run "go install" to install the gator CLI tool.
-- Create a ".gatorconfig.json" file in your home directory (e.g. "~/.gatorconfig.json") and populate with the following:
+- Create a ".gatorconfig.json" file in your home directory (e.g. "~/.gatorconfig.json") and populate with the following content. You'll need to use a valid connection string for your environment.
 
 ```
 {
@@ -24,5 +24,5 @@ You'll need to install:
 
 ## How to Use
 
-Type "gator help" to see available commands.
-Run a command with "gator \<command name\>".
+Type "aggreGATOR help" to see available commands.
+Run a command with "aggreGATOR \<command name\>".
