@@ -5,11 +5,11 @@ import (
 	"errors"
 	"fmt"
 	"log"
+	"strconv"
 	"time"
 
 	"github.com/google/uuid"
 	"github.com/rickNoise/aggreGATOR/internal/database"
-	"github.com/rickNoise/aggreGATOR/rss"
 )
 
 func HandlerLogin(s *State, cmd Command) error {
@@ -100,15 +100,69 @@ func HandlerUsers(s *State, cmd Command) error {
 }
 
 func HandlerAgg(s *State, cmd Command) error {
-	// hardcoded single URL for now
-	const URL = "https://www.wagslane.dev/index.xml"
+	minDurationBetweenRequests := time.Second * 5
 
-	feed, err := rss.FetchFeed(context.Background(), URL)
+	if len(cmd.Arguments) != 1 {
+		return errors.New("agg command takes a single argument (time_between_reqs)")
+	}
+	timeBetweenRequests, err := time.ParseDuration(cmd.Arguments[0])
 	if err != nil {
-		return err
+		return fmt.Errorf("could not parse agg argument as a time duration, use a value like \"60s\"")
+	}
+	if timeBetweenRequests < minDurationBetweenRequests {
+		return errors.New("time_between_reqs argument must at least 5s")
 	}
 
-	fmt.Printf("successfully fetched feed from %s: %+v\n", URL, *feed)
+	fmt.Printf("Collecting feeds every %+v...\n", timeBetweenRequests)
+
+	ticker := time.NewTicker(timeBetweenRequests)
+	for ; ; <-ticker.C {
+		fmt.Printf("Scraping feed...\n")
+		scrapeFeeds(s)
+	}
+}
+
+func HandlerBrowse(s *State, cmd Command, user database.User) error {
+	defaultLimit := 2 // default, if none provided
+	var limit int
+
+	if len(cmd.Arguments) > 1 {
+		return errors.New("browse takes a maximum of one parameter (limit; optional)")
+	} else if len(cmd.Arguments) == 1 {
+		parsedLimit, err := strconv.Atoi(cmd.Arguments[0])
+		if err != nil {
+			return fmt.Errorf("invalid limit '%s': must be a positive integer", cmd.Arguments[0])
+		}
+		if parsedLimit <= 0 {
+			return fmt.Errorf("limit must greater than 0, got %d", limit)
+		}
+		limit = parsedLimit
+	} else {
+		limit = defaultLimit
+	}
+
+	posts, err := s.Db.GetPostsForUser(
+		context.Background(),
+		database.GetPostsForUserParams{
+			UserID:        user.ID,
+			NumPostsLimit: int32(limit),
+		},
+	)
+	if err != nil {
+		return fmt.Errorf("error getting posts for user %s, UserID: %v: %w", user.Name, user.ID, err)
+	}
+
+	fmt.Printf("browsing %d posts for current user %s...\n", limit, user.Name)
+	for i := 0; i < limit; i++ {
+		post := posts[i]
+		fmt.Printf(
+			"title: %s\npublished: %v\nfeed: %s\ndescription: %s\n",
+			post.Title.String,
+			post.PublishedAt.Time.Format("Mon Jan 2"),
+			post.Name, // feed name
+			post.Description.String,
+		)
+	}
 	return nil
 }
 
