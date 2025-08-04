@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"log"
+	"strconv"
 	"time"
 
 	"github.com/google/uuid"
@@ -119,6 +120,50 @@ func HandlerAgg(s *State, cmd Command) error {
 		fmt.Printf("Scraping feed...\n")
 		scrapeFeeds(s)
 	}
+}
+
+func HandlerBrowse(s *State, cmd Command, user database.User) error {
+	defaultLimit := 2 // default, if none provided
+	var limit int
+
+	if len(cmd.Arguments) > 1 {
+		return errors.New("browse takes a maximum of one parameter (limit; optional)")
+	} else if len(cmd.Arguments) == 1 {
+		parsedLimit, err := strconv.Atoi(cmd.Arguments[0])
+		if err != nil {
+			return fmt.Errorf("invalid limit '%s': must be a positive integer", cmd.Arguments[0])
+		}
+		if parsedLimit <= 0 {
+			return fmt.Errorf("limit must greater than 0, got %d", limit)
+		}
+		limit = parsedLimit
+	} else {
+		limit = defaultLimit
+	}
+
+	posts, err := s.Db.GetPostsForUser(
+		context.Background(),
+		database.GetPostsForUserParams{
+			UserID:        user.ID,
+			NumPostsLimit: int32(limit),
+		},
+	)
+	if err != nil {
+		return fmt.Errorf("error getting posts for user %s, UserID: %v: %w", user.Name, user.ID, err)
+	}
+
+	fmt.Printf("browsing %d posts for current user %s...\n", limit, user.Name)
+	for i := 0; i < limit; i++ {
+		post := posts[i]
+		fmt.Printf(
+			"title: %s\npublished: %v\nfeed: %s\ndescription: %s\n",
+			post.Title.String,
+			post.PublishedAt.Time.Format("Mon Jan 2"),
+			post.Name, // feed name
+			post.Description.String,
+		)
+	}
+	return nil
 }
 
 // Creates a new feed (name) at source (url) and sets the current user to follow it.
